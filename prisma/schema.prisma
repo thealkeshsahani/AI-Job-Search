@@ -1,0 +1,146 @@
+// CareerPilot AI Prisma Schema for SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model UserProfile {
+  id                 String   @id @default("user_default")
+  name               String   @default("Rahul Sharma")
+  email              String   @default("rahul.sharma@example.com")
+  phone              String   @default("+91 98765 43210")
+  currentRole        String   @default("Software Engineer")
+  experienceYears    Int      @default(3)
+  expectedSalaryMin  Float    @default(8.0)  // in LPA
+  expectedSalaryMax  Float    @default(14.0) // in LPA
+  noticePeriod       String   @default("30 Days") // Immediate, 15 Days, 30 Days, 60 Days, 90 Days
+  preferredLocations String   @default("Bangalore, Remote, Hyderabad")
+  workMode           String   @default("Hybrid") // Remote, Hybrid, On-site
+  skills             String   @default("[\"Python\", \"React\", \"Node.js\", \"SQL\", \"FastAPI\", \"Git\", \"Docker\"]") // JSON string array
+  education          String   @default("B.Tech in Computer Science, VTU Bangalore (2021)")
+  resumeText         String   @default("")
+  resumeScore        Int      @default(82)
+  atsScore           Int      @default(85)
+  skillsScore        Int      @default(90)
+  experienceScore    Int      @default(78)
+  keywordsScore      Int      @default(82)
+  formattingScore    Int      @default(88)
+  careerGoal         String   @default("Senior Full Stack / AI Engineer in a high-growth tech startup or MNC.")
+  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now())
+}
+
+model Job {
+  id              String   @id @default(uuid())
+  title           String
+  companyName     String
+  companyLogo     String   @default("/logos/default.svg")
+  location        String
+  salaryMin       Float    // in LPA e.g. 6.0
+  salaryMax       Float    // in LPA e.g. 10.0
+  experienceMin   Int      // e.g. 1
+  experienceMax   Int      // e.g. 3
+  workMode        String   // Remote, Hybrid, On-site
+  noticePeriodReq String   @default("Any") // Immediate, 30 Days, Any
+  employmentType  String   @default("Full-time") // Full-time, Contract, Internship
+  skills          String   // JSON string array e.g. ["Python", "Django", "SQL"]
+  summary         String
+  description     String
+  requirements    String   // JSON string array or multiline text
+  benefits        String   // JSON string array or multiline text
+  postedDate      String
+  companyId       String?
+  createdAt       DateTime @default(now())
+
+  applications    Application[]
+  savedJobs       SavedJob[]
+}
+
+model Company {
+  id                 String   @id @default(uuid())
+  name               String   @unique
+  logo               String   @default("/logos/company.svg")
+  industry           String
+  location           String
+  website            String
+  size               String   // e.g. "1,000 - 5,000 employees"
+  overview           String
+  techStack          String   // JSON string array
+  culture            String
+  rating             Float    @default(4.2)
+  openJobsCount      Int      @default(5)
+  shouldApplySummary String   @default("")
+}
+
+model Application {
+  id           String   @id @default(uuid())
+  jobId        String?
+  job          Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobTitle     String
+  companyName  String
+  location     String
+  salary       String   // e.g. "₹8–12 LPA"
+  status       String   @default("APPLIED") // SAVED, APPLIED, DRAFT, DEMO_SENT, SCREENING, INTERVIEW, OFFER, REJECTED
+  appliedDate  String
+  nextFollowUp String?
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ApplicationEmail {
+  id            String    @id @default(uuid())
+  userId        String    @default("user_default")
+  applicationId String?
+  jobId         String?
+  companyName   String
+  jobTitle      String
+  recipient     String
+  subject       String
+  body          String
+  attachment    String?   // Resume filename
+  provider      String    @default("DEMO") // GMAIL | OUTLOOK | RESEND | DEMO
+  status        String    @default("DRAFT") // DRAFT | SENT | DEMO_SENT | FAILED
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  query     String
+  filters   String   // JSON string representation of active filters
+  createdAt DateTime @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String    @default("New Conversation")
+  userId    String    @default("user_default")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String       // "user" | "assistant" | "system"
+  content        String
+  toolUsed       String?
+  toolTrace      String?      // JSON string array of trace steps e.g. ["Searched jobs"]
+  data           String?      // JSON string containing embedded jobs or contextual data
+  createdAt      DateTime     @default(now())
+}
